@@ -3,6 +3,6 @@
   "version": "1.0.0",
   "description": "HINA Toolkit - Vercel Full Project",
   "engines": {
-    "node": "18.x"
+    "node": "24.x"
   }
 }
