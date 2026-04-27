@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>HINA ADMIN PANEL</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Orbitron:wght@700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #e8edf2;
+    --surface: #e8edf2;
+    --primary: #6c63ff;
+    --secondary: #ff6584;
+    --accent: #43e97b;
+    --warn: #f6ad55;
+    --text: #2d3748;
+    --text-sub: #718096;
+    --shadow-light: #ffffff;
+    --shadow-dark: #c5cdd9;
+    --neu-out: 6px 6px 14px var(--shadow-dark), -6px -6px 14px var(--shadow-light);
+    --neu-in: inset 4px 4px 10px var(--shadow-dark), inset -4px -4px 10px var(--shadow-light);
+    --neu-hover: 8px 8px 20px var(--shadow-dark), -8px -8px 20px var(--shadow-light);
+    --radius: 16px;
+    --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); font-family: 'Poppins', sans-serif; color: var(--text); min-height: 100vh; }
+
+  /* TOAST */
+  #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+  .toast { background: var(--surface); box-shadow: var(--neu-out); border-radius: 12px; padding: 12px 18px; font-size: 13px; font-weight: 600; min-width: 210px; animation: slideIn 0.3s ease; display: flex; align-items: center; gap: 10px; }
+  .toast.success { border-left: 4px solid var(--accent); }
+  .toast.error { border-left: 4px solid var(--secondary); }
+  .toast.info { border-left: 4px solid var(--primary); }
+  @keyframes slideIn { from{opacity:0;transform:translateX(50px)} to{opacity:1;transform:translateX(0)} }
+  @keyframes slideUp { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes pulseDark { 0%,100%{box-shadow:0 0 0 0 rgba(108,99,255,0.4)} 50%{box-shadow:0 0 0 14px rgba(108,99,255,0)} }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
+
+  /* ===== ADMIN LOGIN ===== */
+  #aLogin { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; animation: slideUp 0.5s ease; }
+  .admin-login-card { background: var(--surface); box-shadow: var(--neu-out); border-radius: 28px; padding: 48px 40px; max-width: 420px; width: 100%; text-align: center; }
+  .al-logo { width: 80px; height: 80px; background: var(--surface); box-shadow: var(--neu-out); border-radius: 24px; display: flex; align-items: center; justify-content: center; margin: 0 auto 18px; font-size: 38px; animation: pulseDark 2.5s infinite; }
+  .al-title { font-family: 'Orbitron', monospace; font-size: 22px; font-weight: 700; color: var(--primary); letter-spacing: 2px; margin-bottom: 4px; }
+  .al-sub { font-size: 13px; color: var(--text-sub); margin-bottom: 30px; }
+  .al-field { position: relative; margin-bottom: 16px; }
+  .al-field .ico { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); font-size: 17px; }
+  .al-input { width: 100%; padding: 13px 13px 13px 44px; background: var(--surface); border: none; border-radius: 13px; box-shadow: var(--neu-in); font-size: 14px; font-family: 'Poppins', sans-serif; color: var(--text); outline: none; transition: var(--transition); }
+  .al-input:focus { box-shadow: var(--neu-in), 0 0 0 2px var(--primary); }
+  .al-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, var(--primary), #8b5cf6); color: #fff; border: none; border-radius: 13px; font-size: 15px; font-weight: 700; font-family: 'Poppins', sans-serif; cursor: pointer; letter-spacing: 1px; transition: var(--transition); box-shadow: 4px 4px 12px rgba(108,99,255,0.35); }
+  .al-btn:hover { transform: translateY(-2px); }
+  .al-error { font-size: 13px; color: var(--secondary); background: rgba(255,101,132,0.08); border-radius: 10px; padding: 9px 14px; margin-bottom: 12px; display: none; }
+
+  /* ===== ADMIN DASHBOARD ===== */
+  #aDash { display: none; min-height: 100vh; animation: slideUp 0.5s ease; }
+  .adm-header { position: sticky; top: 0; z-index: 50; background: var(--surface); box-shadow: 0 4px 20px rgba(0,0,0,0.08); padding: 14px 28px; display: flex; align-items: center; gap: 16px; }
+  .adm-logo { width: 46px; height: 46px; background: var(--surface); box-shadow: var(--neu-out); border-radius: 13px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+  .adm-brand h1 { font-family: 'Orbitron', monospace; font-size: 17px; color: var(--primary); letter-spacing: 1.5px; }
+  .adm-brand p { font-size: 11px; color: var(--text-sub); }
+  .adm-logout { margin-left: auto; background: var(--surface); box-shadow: var(--neu-out); border: none; border-radius: 11px; padding: 8px 16px; font-size: 13px; font-weight: 600; color: var(--secondary); cursor: pointer; font-family: 'Poppins', sans-serif; transition: var(--transition); }
+  .adm-logout:hover { box-shadow: var(--neu-hover); }
+
+  /* NAV TABS */
+  .adm-nav { padding: 22px 28px 0; display: flex; gap: 10px; flex-wrap: wrap; }
+  .adm-tab { background: var(--surface); box-shadow: var(--neu-out); border: none; border-radius: 13px; padding: 10px 22px; font-size: 13px; font-weight: 600; color: var(--text-sub); cursor: pointer; font-family: 'Poppins', sans-serif; transition: var(--transition); display: flex; align-items: center; gap: 7px; }
+  .adm-tab:hover { box-shadow: var(--neu-hover); }
+  .adm-tab.active { box-shadow: var(--neu-in); color: var(--primary); }
+
+  .adm-content { padding: 24px 28px; max-width: 1100px; margin: 0 auto; }
+  .section { display: none; }
+  .section.active { display: block; animation: slideUp 0.4s ease; }
+
+  /* CARDS / PANELS */
+  .panel { background: var(--surface); box-shadow: var(--neu-out); border-radius: 20px; padding: 26px; margin-bottom: 24px; }
+  .panel-title { font-size: 16px; font-weight: 700; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; color: var(--text); }
+
+  /* FORM FIELDS */
+  .form-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; margin-bottom: 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group label { font-size: 12px; font-weight: 600; color: var(--text-sub); letter-spacing: 0.5px; }
+  .form-input, .form-select, .form-textarea { background: var(--surface); border: none; border-radius: 12px; box-shadow: var(--neu-in); padding: 11px 14px; font-size: 13px; font-family: 'Poppins', sans-serif; color: var(--text); outline: none; transition: var(--transition); width: 100%; }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { box-shadow: var(--neu-in), 0 0 0 2px var(--primary); }
+  .form-textarea { resize: vertical; min-height: 80px; }
+
+  /* BUTTONS */
+  .btn { padding: 10px 20px; border: none; border-radius: 12px; font-size: 13px; font-weight: 700; font-family: 'Poppins', sans-serif; cursor: pointer; transition: var(--transition); }
+  .btn-primary { background: linear-gradient(135deg, var(--primary), #8b5cf6); color: #fff; box-shadow: 3px 3px 8px rgba(108,99,255,0.3); }
+  .btn-primary:hover { transform: translateY(-2px); }
+  .btn-danger { background: linear-gradient(135deg, var(--secondary), #e53e3e); color: #fff; box-shadow: 3px 3px 8px rgba(255,101,132,0.3); }
+  .btn-danger:hover { transform: translateY(-2px); }
+  .btn-ghost { background: var(--surface); box-shadow: var(--neu-out); color: var(--text-sub); }
+  .btn-ghost:hover { box-shadow: var(--neu-hover); }
+
+  /* ===== KEY MANAGEMENT ===== */
+  .filter-row { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; align-items: center; }
+  .filter-btn { background: var(--surface); box-shadow: var(--neu-out); border: none; border-radius: 10px; padding: 7px 16px; font-size: 12px; font-weight: 600; color: var(--text-sub); cursor: pointer; font-family: 'Poppins', sans-serif; transition: var(--transition); }
+  .filter-btn.active { box-shadow: var(--neu-in); color: var(--primary); }
+  .filter-btn:hover { box-shadow: var(--neu-hover); }
+
+  .key-table-wrap { overflow-x: auto; border-radius: 14px; box-shadow: var(--neu-in); padding: 4px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th { padding: 12px 14px; text-align: left; font-size: 11px; font-weight: 700; color: var(--text-sub); letter-spacing: 0.8px; text-transform: uppercase; border-bottom: 2px solid var(--shadow-dark); }
+  tbody tr { border-bottom: 1px solid var(--shadow-dark); transition: var(--transition); }
+  tbody tr:hover { background: rgba(108,99,255,0.04); }
+  tbody td { padding: 11px 14px; }
+  .key-mono { font-family: monospace; font-size: 12px; background: var(--surface); box-shadow: var(--neu-in); padding: 5px 10px; border-radius: 8px; cursor: pointer; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 7px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; }
+  .badge-active { background: rgba(67,233,123,0.15); color: #27a548; }
+  .badge-used { background: rgba(108,99,255,0.12); color: var(--primary); }
+  .badge-expired { background: rgba(255,101,132,0.12); color: var(--secondary); }
+  .badge-plan-1 { background: rgba(246,173,85,0.15); color: #c05621; }
+  .badge-plan-7 { background: rgba(108,99,255,0.12); color: var(--primary); }
+  .badge-plan-15 { background: rgba(0,188,212,0.15); color: #00838f; }
+  .badge-plan-30 { background: rgba(67,233,123,0.12); color: #27a548; }
+  .badge-plan-full { background: linear-gradient(135deg, rgba(108,99,255,0.2), rgba(139,92,246,0.2)); color: var(--primary); }
+
+  .action-cell { display: flex; gap: 6px; }
+  .icon-btn { background: var(--surface); box-shadow: var(--neu-out); border: none; border-radius: 8px; width: 30px; height: 30px; cursor: pointer; font-size: 14px; transition: var(--transition); display: flex; align-items: center; justify-content: center; }
+  .icon-btn:hover { box-shadow: var(--neu-hover); }
+
+  /* TOOL SECTION */
+  .tools-adm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; margin-top: 18px; }
+  .tool-adm-card { background: var(--surface); box-shadow: var(--neu-out); border-radius: 16px; padding: 18px; animation: slideUp 0.3s ease; }
+  .tac-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .tac-icon { width: 40px; height: 40px; background: var(--surface); box-shadow: var(--neu-out); border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  .tac-name { font-size: 15px; font-weight: 700; }
+  .tac-desc { font-size: 12px; color: var(--text-sub); margin-bottom: 12px; }
+  .tac-actions { display: flex; gap: 8px; }
+
+  /* SETTINGS SECTION */
+  .color-row { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+  .color-row label { font-size: 13px; font-weight: 600; min-width: 120px; }
+  .color-row input[type=color] { width: 46px; height: 36px; border: none; border-radius: 10px; cursor: pointer; box-shadow: var(--neu-out); background: none; }
+  .color-row .form-input { flex: 1; }
+
+  /* NOTIF PREVIEW */
+  .notif-preview { background: linear-gradient(135deg, var(--primary), #8b5cf6); color: #fff; border-radius: 14px; padding: 16px 20px; display: flex; align-items: center; gap: 14px; margin-top: 14px; }
+  .notif-preview .ni { font-size: 24px; }
+  .notif-preview .nt { font-weight: 700; font-size: 15px; }
+  .notif-preview .nm { font-size: 12px; opacity: 0.9; margin-top: 2px; }
+
+  /* MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 200; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px); }
+  .modal-overlay.active { display: flex; }
+  .modal-box { background: var(--surface); box-shadow: 16px 16px 40px rgba(0,0,0,0.2), -16px -16px 40px var(--shadow-light); border-radius: 22px; padding: 30px; max-width: 520px; width: 100%; animation: slideUp 0.35s ease; }
+  .modal-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .modal-hdr h3 { font-size: 18px; font-weight: 700; }
+  .modal-close-btn { background: var(--surface); box-shadow: var(--neu-out); border: none; border-radius: 10px; width: 34px; height: 34px; font-size: 17px; cursor: pointer; }
+
+  /* STATS ROW */
+  .stats-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 16px; margin-bottom: 26px; }
+  .stat-card { background: var(--surface); box-shadow: var(--neu-out); border-radius: 18px; padding: 20px; text-align: center; }
+  .stat-num { font-size: 32px; font-weight: 800; color: var(--primary); }
+  .stat-label { font-size: 12px; color: var(--text-sub); font-weight: 600; margin-top: 4px; }
+
+  @media (max-width: 600px) {
+    .adm-header { padding: 12px 16px; flex-wrap: wrap; }
+    .adm-nav { padding: 14px 16px 0; }
+    .adm-content { padding: 16px; }
+    .form-row { grid-template-columns: 1fr; }
+    .admin-login-card { padding: 32px 20px; }
+    #sec-tools > div:first-child { grid-template-columns: 1fr !important; }
+  }
+</style>
+
+  <!-- ===== FIREBASE ===== -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, get, set, push, remove, update, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDDSRdiwaL7IPqQt6Rc",
+      authDomain: "hina-tollkit-c7c72.firebaseapp.com",
+      databaseURL: "https://hina-tollkit-c7c72-default-rtdb.firebaseio.com",
+      projectId: "hina-tollkit-c7c72",
+      storageBucket: "hina-tollkit-c7c72.appspot.com",
+      messagingSenderId: "552332199122",
+      appId: "1:552332199122:web:d60c86",
+      measurementId: "G-YTZXBYERKC"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const storage = getStorage(app);
+
+    window.firebaseDB = db;
+    window.firebaseRef = ref;
+    window.firebaseStorage = storage;
+    window.firebaseStorageRef = sRef;
+    window.firebaseUploadBytes = uploadBytes;
+    window.firebaseGetDownloadURL = getDownloadURL;
+    window.firebaseGet = get;
+    window.firebaseSet = set;
+    window.firebasePush = push;
+    window.firebaseRemove = remove;
+    window.firebaseUpdate = update;
+    window.firebaseOnValue = onValue;
+    window.firebaseReady = true;
+
+    // Live sync: listen for key changes in Firebase
+    onValue(ref(db, 'keys'), (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        keys = Object.entries(data).map(([fbId, k]) => ({ ...k, fbId }));
+      } else {
+        keys = [];
+      }
+      renderKeyStats();
+      renderKeyTable();
+    });
+
+    // ✅ Live sync: listen for tool changes in Firebase
+    onValue(ref(db, 'tools'), (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        tools = Object.values(data);
+      } else {
+        tools = [];
+      }
+      renderToolAdmGrid();
+    });
+
+    console.log("✅ Firebase Admin connected!");
+  </script>
+
+</head>
+<body>
+
+<div id="toast-container"></div>
+
+<!-- ===== ADMIN LOGIN ===== -->
+<div id="aLogin">
+  <div class="admin-login-card">
+    <div class="al-logo">⚙️</div>
+    <div class="al-title">ADMIN PANEL</div>
+    <div class="al-sub">HINA TOOLKIT — Secure Admin Access</div>
+    <div class="al-error" id="alError">❌ Wrong credentials. Try again.</div>
+    <div class="al-field">
+      <span class="ico">👤</span>
+      <input class="al-input" id="alUser" placeholder="Username" autocomplete="off"/>
+    </div>
+    <div class="al-field">
+      <span class="ico">🔒</span>
+      <input class="al-input" id="alPass" type="password" placeholder="Password" autocomplete="off"/>
+    </div>
+    <button class="al-btn" onclick="adminLogin()">🛡️ Login to Admin Panel</button>
+  </div>
+</div>
+
+<!-- ===== ADMIN DASHBOARD ===== -->
+<div id="aDash">
+  <!-- Header -->
+  <div class="adm-header">
+    <div class="adm-logo">⚙️</div>
+    <div class="adm-brand">
+      <h1>ADMIN PANEL</h1>
+      <p>HINA TOOLKIT Control Center</p>
+    </div>
+    <div style="background:rgba(67,233,123,0.15);border-radius:10px;padding:6px 14px;font-size:12px;font-weight:700;color:#27a548;display:flex;align-items:center;gap:6px;">
+      🔗 Auto-Sync ON
+    </div>
+    <button class="adm-logout" onclick="adminLogout()">🚪 Logout</button>
+  </div>
+
+  <!-- Nav Tabs -->
+  <div class="adm-nav">
+    <button class="adm-tab active" onclick="switchTab('keys', this)">🔑 Key Management</button>
+    <button class="adm-tab" onclick="switchTab('tools', this)">🛠️ Tool Management</button>
+    <button class="adm-tab" onclick="switchTab('settings', this)">⚙️ Settings</button>
+    <button class="adm-tab" onclick="switchTab('loginedit', this)">✏️ Login Page Edit</button>
+  </div>
+
+  <!-- Content -->
+  <div class="adm-content">
+
+    <!-- ====== KEY MANAGEMENT ====== -->
+    <div class="section active" id="sec-keys">
+      <!-- Stats -->
+      <div class="stats-row" id="keyStats"></div>
+
+      <!-- Generate Keys -->
+      <div class="panel">
+        <div class="panel-title">➕ Generate New Keys</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>QUANTITY</label>
+            <input class="form-input" id="genQty" type="number" placeholder="e.g. 5" min="1" max="100" value="1"/>
+          </div>
+          <div class="form-group">
+            <label>PLAN</label>
+            <select class="form-select" id="genPlan">
+              <option value="1-day">1 Day</option>
+              <option value="3-day">3 Days</option>
+              <option value="7-day">7 Days</option>
+              <option value="15-day">15 Days</option>
+              <option value="30-day">30 Days</option>
+              <option value="full">Full Access</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>EXPIRY DATE (auto set from plan)</label>
+            <input class="form-input" id="genExpiry" type="date" placeholder="Auto calculated from plan" style="opacity:0.5;" readonly/>
+          </div>
+          <div class="form-group">
+            <label>NOTE (optional)</label>
+            <input class="form-input" id="genNote" id="genNote" placeholder="Custom password (e.g. HINA786, Legend@123)"/>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="generateKeys()">🔑 Generate Keys</button>
+          <button class="btn btn-danger" onclick="clearAllKeys()">🗑️ Clear All Keys</button>
+        </div>
+      </div>
+
+      <!-- Key List -->
+      <div class="panel">
+        <div class="panel-title">📋 Key List</div>
+        <div class="filter-row">
+          <button class="filter-btn active" onclick="filterKeys('all',this)">All</button>
+          <button class="filter-btn" onclick="filterKeys('active',this)">✅ Active</button>
+          <button class="filter-btn" onclick="filterKeys('used',this)">🔵 Used</button>
+          <button class="filter-btn" onclick="filterKeys('expired',this)">❌ Expired</button>
+        </div>
+        <div class="key-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>KEY</th><th>PLAN</th><th>STATUS</th><th>USED BY</th><th>EXPIRES</th><th>NOTE</th><th>ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody id="keyTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== TOOL MANAGEMENT ====== -->
+    <div class="section" id="sec-tools">
+
+      <!-- LEFT/RIGHT LAYOUT -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
+
+        <!-- ADD TOOL FORM -->
+        <div class="panel">
+          <div class="panel-title">➕ Add New Tool</div>
+          <div class="form-group" style="margin-bottom:14px;">
+            <label>TOOL NAME</label>
+            <input class="form-input" id="tn" placeholder="e.g. YouTube Downloader"/>
+          </div>
+          <div class="form-group" style="margin-bottom:14px;">
+            <label>TOOL LINK (URL)</label>
+            <input class="form-input" id="turl" placeholder="https://example.com"/>
+          </div>
+          <div class="form-group" style="margin-bottom:18px;">
+            <label>TOOL ICON LINK (Image URL)</label>
+            <input class="form-input" id="tiurl" placeholder="https://i.imgur.com/abc.png" oninput="previewToolIcon()"/>
+            <div id="iconPreviewBox" style="margin-top:10px;display:none;">
+              <img id="iconPreview" src="" style="width:52px;height:52px;border-radius:12px;object-fit:cover;box-shadow:var(--neu-out);"/>
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="addTool()" style="width:100%;">➕ Add Tool</button>
+        </div>
+
+        <!-- IMAGE UPLOADER → LINK GENERATOR -->
+        <div class="panel">
+          <div class="panel-title">🖼️ Image Upload → Link Ready</div>
+          <div id="uploadDropZone" onclick="document.getElementById('imgFileInput').click()"
+            style="border:2px dashed var(--shadow-dark);border-radius:14px;padding:30px 20px;text-align:center;cursor:pointer;transition:var(--transition);margin-bottom:14px;"
+            ondragover="event.preventDefault();this.style.borderColor='var(--primary)'"
+            ondragleave="this.style.borderColor='var(--shadow-dark)'"
+            ondrop="handleDrop(event)">
+            <div style="font-size:36px;margin-bottom:8px;">📁</div>
+            <div style="font-weight:600;color:var(--text);">Click ya Image Drag karo</div>
+            <div style="font-size:12px;color:var(--text-sub);margin-top:4px;">PNG, JPG, GIF support</div>
+          </div>
+          <input type="file" id="imgFileInput" accept="image/*" style="display:none;" onchange="handleFileSelect(event)"/>
+
+          <!-- Preview -->
+          <div id="uploadPreviewBox" style="display:none;margin-bottom:14px;text-align:center;">
+            <img id="uploadPreview" src="" style="max-width:100%;max-height:160px;border-radius:12px;box-shadow:var(--neu-out);"/>
+          </div>
+
+          <!-- Upload Button -->
+          <button class="btn btn-primary" id="uploadBtn" onclick="uploadImageToImgBB()" style="width:100%;display:none;">☁️ Upload & Get Link</button>
+
+          <!-- Generated Link -->
+          <div id="generatedLinkBox" style="display:none;margin-top:14px;">
+            <label style="font-size:12px;font-weight:700;color:var(--text-sub);">✅ IMAGE LINK READY:</label>
+            <div style="display:flex;gap:8px;margin-top:6px;">
+              <input class="form-input" id="generatedLink" readonly style="font-size:12px;"/>
+              <button class="btn btn-primary" onclick="copyGeneratedLink()" style="padding:10px 14px;white-space:nowrap;">📋 Copy</button>
+              <button class="btn btn-ghost" onclick="useAsToolIcon()" style="padding:10px 14px;white-space:nowrap;">🛠️ Use</button>
+            </div>
+          </div>
+
+          <div id="uploadStatus" style="margin-top:10px;font-size:13px;font-weight:600;color:var(--text-sub);text-align:center;"></div>
+        </div>
+
+      </div>
+
+      <!-- ALL TOOLS GRID -->
+      <div class="panel" style="margin-top:0;">
+        <div class="panel-title">🛠️ All Tools</div>
+        <div class="tools-adm-grid" id="toolAdmGrid"></div>
+      </div>
+    </div>
+
+    <!-- ====== SETTINGS ====== -->
+    <div class="section" id="sec-loginedit">
+      <div class="panel">
+        <div class="panel-title">✏️ Login Page Editor</div>
+        <div class="form-group" style="margin-bottom:14px;">
+          <label>TITLE</label>
+          <input class="form-input" id="lp_title" placeholder="𝗛𝗶𝗡𝗔 𝗧𝗢𝗢𝗟𝗞𝗜𝗧" value="𝗛𝗶𝗡𝗔 𝗧𝗢𝗢𝗟𝗞𝗜𝗧"/>
+        </div>
+        <div class="form-group" style="margin-bottom:14px;">
+          <label>WELCOME TEXT</label>
+          <input class="form-input" id="lp_welcome" placeholder="Welcome❤️" value="Welcome❤️"/>
+        </div>
+        <div class="form-group" style="margin-bottom:14px;">
+          <label>LINE 1 (e.g. 🔥ʜɪɴᴀ🔥)</label>
+          <input class="form-input" id="lp_line1" value="🔥ʜɪɴᴀ🔥"/>
+        </div>
+        <div class="form-group" style="margin-bottom:14px;">
+          <label>LINE 2 (e.g. ⚡x⚡)</label>
+          <input class="form-input" id="lp_line2" value="⚡x⚡"/>
+        </div>
+        <div class="form-group" style="margin-bottom:14px;">
+          <label>LINE 3 (e.g. ❤️ʟᴇɢᴇɴᴅ❤️)</label>
+          <input class="form-input" id="lp_line3" value="❤️ʟᴇɢᴇɴᴅ❤️"/>
+        </div>
+        <div class="form-group" style="margin-bottom:14px;">
+          <label>PASSWORD PLACEHOLDER</label>
+          <input class="form-input" id="lp_passph" value="🔑  Enter your password"/>
+        </div>
+        <div class="form-group" style="margin-bottom:14px;">
+          <label>LOGIN BUTTON TEXT</label>
+          <input class="form-input" id="lp_loginbtn" value="𝗟𝗢𝗚𝗜𝗡"/>
+        </div>
+        <div class="form-group" style="margin-bottom:14px;">
+          <label>WHATSAPP BUTTON TEXT</label>
+          <input class="form-input" id="lp_wabtn" value="Contact Admin"/>
+        </div>
+        <div class="form-group" style="margin-bottom:14px;">
+          <label>📱 WHATSAPP NUMBER (country code ke sath, e.g. 923001234567)</label>
+          <input class="form-input" id="lp_wanum" placeholder="923001234567" value="923001234567" type="tel" oninput="updateWAPreview()"/>
+          <div id="wa_preview_box" style="margin-top:10px;padding:10px 14px;background:rgba(37,211,102,0.1);border-radius:10px;border-left:4px solid #25d366;font-size:12px;font-weight:600;color:#128c7e;display:flex;align-items:center;gap:8px;">
+            <span>💬 WhatsApp Link:</span>
+            <a id="wa_preview_link" href="https://wa.me/923001234567" target="_blank" style="color:#128c7e;word-break:break-all;">https://wa.me/923001234567</a>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:14px;">
+          <label>WRONG PASSWORD MESSAGE</label>
+          <input class="form-input" id="lp_errmsg" value="❌ Wrong Password! Please Contact Admin."/>
+        </div>
+        <button class="btn btn-primary" onclick="saveLoginPageSettings()" style="margin-top:8px;">💾 Save Login Page</button>
+        <div id="lp_status" style="margin-top:12px;font-size:13px;color:green;display:none;">✅ Saved! Reload toolkit to see changes.</div>
+      </div>
+    </div>
+
+    <div class="section" id="sec-settings">
+      <!-- Branding -->
+      <div class="panel">
+        <div class="panel-title">🎨 Branding</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>APP NAME</label>
+            <input class="form-input" id="setName" value="HINA TOOLKIT"/>
+          </div>
+          <div class="form-group">
+            <label>SUBTITLE</label>
+            <input class="form-input" id="setSubtitle" value="Your all-in-one digital toolkit"/>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="saveBranding()">💾 Save Branding</button>
+      </div>
+
+      <!-- Colors -->
+      <div class="panel">
+        <div class="panel-title">🖌️ Color Scheme</div>
+        <div class="color-row">
+          <label>Primary Color</label>
+          <input type="color" id="cPrimary" value="#6c63ff" oninput="updateColorPreview('--primary', this.value)"/>
+          <input class="form-input" id="cPrimaryHex" value="#6c63ff" oninput="syncColor('cPrimary', this.value)"/>
+        </div>
+        <div class="color-row">
+          <label>Secondary Color</label>
+          <input type="color" id="cSecondary" value="#ff6584" oninput="updateColorPreview('--secondary', this.value)"/>
+          <input class="form-input" id="cSecondaryHex" value="#ff6584" oninput="syncColor('cSecondary', this.value)"/>
+        </div>
+        <div class="color-row">
+          <label>Accent Color</label>
+          <input type="color" id="cAccent" value="#43e97b" oninput="updateColorPreview('--accent', this.value)"/>
+          <input class="form-input" id="cAccentHex" value="#43e97b" oninput="syncColor('cAccent', this.value)"/>
+        </div>
+        <div class="color-row">
+          <label>Background</label>
+          <input type="color" id="cBg" value="#e8edf2" oninput="updateColorPreview('--bg', this.value)"/>
+          <input class="form-input" id="cBgHex" value="#e8edf2" oninput="syncColor('cBg', this.value)"/>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="saveColors()">💾 Save Colors</button>
+          <button class="btn btn-ghost" onclick="resetColors()">🔄 Reset to Default</button>
+        </div>
+      </div>
+
+      <!-- Notifications -->
+      <div class="panel">
+        <div class="panel-title">📢 Send Notification</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>ICON (emoji)</label>
+            <input class="form-input" id="nIcon" value="📢" maxlength="4" oninput="updateNotifPreview()"/>
+          </div>
+          <div class="form-group">
+            <label>TITLE</label>
+            <input class="form-input" id="nTitle" placeholder="Notification Title" oninput="updateNotifPreview()"/>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:14px;">
+          <label>MESSAGE</label>
+          <textarea class="form-textarea" id="nMsg" placeholder="Notification message..." oninput="updateNotifPreview()"></textarea>
+        </div>
+
+        <!-- Preview -->
+        <div class="notif-preview" id="notifPreview">
+          <span class="ni" id="pIcon">📢</span>
+          <div>
+            <div class="nt" id="pTitle">Notification Title</div>
+            <div class="nm" id="pMsg">Your message here</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="sendNotification()">📤 Send to All Users</button>
+          <button class="btn btn-ghost" onclick="clearNotification()">🗑️ Clear Notification</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- TOOL PREVIEW MODAL (with Back button) -->
+<div class="modal-overlay" id="toolPreviewModal">
+  <div class="modal-box" style="max-width:600px;">
+    <div class="modal-hdr">
+      <button class="btn btn-ghost" style="padding:7px 16px;font-size:13px;display:flex;align-items:center;gap:6px;" onclick="closeToolPreview()">⬅️ Back</button>
+      <h3 id="tpModalTitle" style="font-size:16px;">Tool Preview</h3>
+      <button class="modal-close-btn" onclick="closeToolPreview()">✕</button>
+    </div>
+    <div id="tpContent" style="margin-top:8px;"></div>
+  </div>
+</div>
+
+<!-- EDIT TOOL MODAL -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <h3>✏️ Edit Tool</h3>
+      <button class="modal-close-btn" onclick="closeEditModal()">✕</button>
+    </div>
+    <div class="form-group" style="margin-bottom:12px;"><label>NAME</label><input class="form-input" id="eName"/></div>
+    <div class="form-group" style="margin-bottom:12px;"><label>CATEGORY</label><input class="form-input" id="eCat"/></div>
+    <div class="form-group" style="margin-bottom:12px;"><label>ICON</label><input class="form-input" id="eIcon"/></div>
+    <div class="form-group" style="margin-bottom:12px;"><label>DESCRIPTION</label><input class="form-input" id="eDesc"/></div>
+    <div class="form-group" style="margin-bottom:12px;"><label>URL (if external)</label><input class="form-input" id="eUrl"/></div>
+    <div class="form-group" style="margin-bottom:18px;"><label>JS LOGIC (if internal)</label><textarea class="form-textarea" id="eLogic"></textarea></div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-primary" onclick="saveEditTool()">💾 Save Changes</button>
+      <button class="btn btn-ghost" onclick="closeEditModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== ADMIN CREDENTIALS (Replace with Firebase Auth) =====
+const ADMIN_USER = "admin";
+const ADMIN_PASS = "hina@admin2024";
+
+// ===== STATE =====
+let keys = [
+  { id: genId(), key: "HINA-FREE-2024",  plan: "1-day",  status: "active",  usedBy: "",       expiry: "2025-12-31", note: "Sample key" },
+  { id: genId(), key: "HINA-PRO-9999",   plan: "30-day", status: "used",    usedBy: "user123", expiry: "2026-06-30", note: "Pro user"    },
+  { id: genId(), key: "HINA-EXP-0001",   plan: "7-day",  status: "expired", usedBy: "",        expiry: "2024-01-01", note: "Old key"     },
+];
+let tools = [
+  { id:1, name:"Text Reverser",  cat:"Text Tools",   icon:"🔄", desc:"Reverse any text.",          type:"internal", pinned:true,  logic:"return input.split('').reverse().join('');"                },
+  { id:2, name:"Word Counter",   cat:"Text Tools",   icon:"🔢", desc:"Count words & characters.",  type:"internal", pinned:false, logic:"let w=input.trim().split(/\\s+/).filter(Boolean).length; return `Words: ${w}, Chars: ${input.length}`;" },
+  { id:3, name:"Google Search",  cat:"Search",       icon:"🔍", desc:"Search the web.",            type:"external", pinned:false, url:"https://www.google.com"                                       },
+  { id:4, name:"Hashtag Gen",    cat:"Social Media", icon:"#️⃣", desc:"Generate hashtags.",        type:"internal", pinned:true,  logic:"return input.trim().split(' ').map(w=>'#'+w.replace(/[^a-zA-Z0-9]/g,'')).join(' ');" },
+];
+let keyFilter = "all";
+let editingToolId = null;
+
+function genId() { return Math.random().toString(36).substr(2,9); }
+
+// ===== LOCALSTORAGE SYNC =====
+function saveKeysToStorage() {
+  localStorage.setItem('hina_keys', JSON.stringify(keys));
+  // Also save to Firebase
+  saveKeysToFirebase();
+}
+
+function loadKeysFromStorage() {
+  try {
+    const stored = JSON.parse(localStorage.getItem('hina_keys') || '[]');
+    if (stored.length > 0) keys = stored;
+  } catch(e) {}
+}
+
+async function saveKeysToFirebase() {
+  if (!window.firebaseReady) return;
+  try {
+    // Save all keys to Firebase
+    const keysObj = {};
+    keys.forEach(k => {
+      const fbId = k.fbId || k.id;
+      keysObj[fbId] = {
+        id: k.id,
+        key: k.key,
+        plan: k.plan,
+        status: k.status,
+        usedBy: k.usedBy || '',
+        expiry: k.expiry,
+        expiryTimestamp: k.expiryTimestamp || null, // ✅ exact ms timestamp
+        note: k.note || '',
+        deviceId: k.deviceId || null,
+        planDays: k.planDays || 0
+      };
+    });
+    await window.firebaseSet(window.firebaseRef(window.firebaseDB, 'keys'), keysObj);
+  } catch(e) {
+    console.log('Firebase save error:', e);
+  }
+}
+
+async function deleteKeyFromFirebase(fbId) {
+  if (!window.firebaseReady || !fbId) return;
+  try {
+    await window.firebaseRemove(window.firebaseRef(window.firebaseDB, 'keys/' + fbId));
+  } catch(e) { console.log('Firebase delete error:', e); }
+}
+
+// ===== ADMIN LOGIN =====
+function adminLogin() {
+  const u = document.getElementById('alUser').value.trim();
+  const p = document.getElementById('alPass').value;
+  const err = document.getElementById('alError');
+  err.style.display = 'none';
+  if (u === ADMIN_USER && p === ADMIN_PASS) {
+    document.getElementById('aLogin').style.display = 'none';
+    document.getElementById('aDash').style.display = 'block';
+    renderKeyStats(); renderKeyTable(); renderToolAdmGrid();
+    showToast("Connecting to Firebase... ☁️", "info");
+    showToast('Welcome, Admin! Keys loaded from storage ✅', 'success');
+  } else {
+    err.style.display = 'block';
+    document.querySelector('.admin-login-card').style.animation = '';
+    setTimeout(()=>{ document.querySelector('.admin-login-card').style.animation='shake 0.4s ease'; },10);
+  }
+}
+function adminLogout() {
+  document.getElementById('aDash').style.display = 'none';
+  document.getElementById('aLogin').style.display = 'flex';
+  document.getElementById('alUser').value=''; document.getElementById('alPass').value='';
+}
+
+// ===== TAB SWITCHING =====
+function switchTab(tab, btn) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.adm-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('sec-'+tab).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ===== KEY MANAGEMENT =====
+function renderKeyStats() {
+  const total = keys.length;
+  const active = keys.filter(k=>k.status==='active').length;
+  const used = keys.filter(k=>k.status==='used').length;
+  const expired = keys.filter(k=>k.status==='expired').length;
+  document.getElementById('keyStats').innerHTML = `
+    <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">Total Keys</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:#27a548">${active}</div><div class="stat-label">Active</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--primary)">${used}</div><div class="stat-label">Used</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--secondary)">${expired}</div><div class="stat-label">Expired</div></div>
+  `;
+}
+
+function renderKeyTable() {
+  const filtered = keyFilter === 'all' ? keys : keys.filter(k=>k.status===keyFilter);
+  const tbody = document.getElementById('keyTableBody');
+  if (!filtered.length) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-sub);">No keys found.</td></tr>`; return; }
+  tbody.innerHTML = filtered.map(k => `
+    <tr>
+      <td><span class="key-mono" onclick="copyText('${k.key}')" title="Click to copy">${k.key}</span></td>
+      <td><span class="badge badge-plan-${k.plan.split('-')[0]}">${k.plan}</span></td>
+      <td><span class="badge badge-${k.status}">${k.status}</span></td>
+      <td>${k.usedBy || '<span style="color:var(--text-sub)">—</span>'}</td>
+      <td>${k.expiry}</td>
+      <td>${k.note || '<span style="color:var(--text-sub)">—</span>'}</td>
+      <td>
+        <div class="action-cell">
+          <button class="icon-btn" onclick="copyText('${k.key}')" title="Copy">📋</button>
+          <button class="icon-btn" onclick="deleteKey('${k.id}')" title="Delete" style="color:var(--secondary)">🗑️</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function filterKeys(status, btn) {
+  keyFilter = status;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderKeyTable();
+}
+
+function getPlanDays(plan) {
+  if (plan === '1-day') return 1;
+  if (plan === '3-day') return 3;
+  if (plan === '7-day') return 7;
+  if (plan === '15-day') return 15;
+  if (plan === '30-day') return 30;
+  return 0; // full access
+}
+
+async function generateKeys() {
+  const qty = parseInt(document.getElementById('genQty').value) || 1;
+  const plan = document.getElementById('genPlan').value;
+  const planDays = getPlanDays(plan);
+
+  // ✅ KEY FIX: Exact timestamp — key generate hone ke waqt se bilkul exact time
+  const now = new Date();
+  let expiryTimestamp; // Unix ms — exact expiry moment
+  let expiryDisplay;   // Human readable for table
+
+  if (planDays === 0) {
+    // Full access — year 2099
+    expiryTimestamp = new Date('2099-12-31T23:59:59.999').getTime();
+    expiryDisplay = '2099-12-31 (Full Access)';
+  } else {
+    // e.g. 1 day = exactly 24 * 60 * 60 * 1000 ms from now
+    expiryTimestamp = now.getTime() + (planDays * 24 * 60 * 60 * 1000);
+    const expiryDate = new Date(expiryTimestamp);
+    // Display: YYYY-MM-DD HH:MM:SS
+    const pad = n => String(n).padStart(2,'0');
+    expiryDisplay = expiryDate.getFullYear() + '-' +
+                    pad(expiryDate.getMonth()+1) + '-' +
+                    pad(expiryDate.getDate()) + ' ' +
+                    pad(expiryDate.getHours()) + ':' +
+                    pad(expiryDate.getMinutes()) + ':' +
+                    pad(expiryDate.getSeconds());
+  }
+
+  const customPass = document.getElementById('genNote').value.trim();
+  for (let i=0; i<qty; i++) {
+    const keyId = genId();
+    const keyVal = customPass
+      ? (qty > 1 ? customPass + '-' + (i+1) : customPass)
+      : 'HINA-' + plan.toUpperCase().replace(/-/g,'') + '-' + Math.random().toString(36).substr(2,6).toUpperCase();
+    const note = customPass || 'Auto Generated';
+    const newKey = {
+      id: keyId,
+      key: keyVal,
+      plan,
+      status: 'active',
+      usedBy: '',
+      expiry: expiryDisplay,           // human readable
+      expiryTimestamp: expiryTimestamp, // ✅ exact ms — toolkit yahi use karega
+      note,
+      deviceId: null,
+      planDays: planDays
+    };
+    keys.unshift(newKey);
+    if (window.firebaseReady) {
+      try {
+        await window.firebaseSet(
+          window.firebaseRef(window.firebaseDB, 'keys/' + keyId),
+          newKey
+        );
+      } catch(e) { console.log('Firebase push error:', e); }
+    }
+  }
+  saveKeysToStorage();
+  renderKeyStats(); renderKeyTable();
+  showToast(`${qty} key(s) generated! ✅ Exact time set ho gaya!`, 'success');
+}
+
+async function deleteKey(id) {
+  if (!confirm('Delete this key?')) return;
+  const k = keys.find(k=>k.id===id);
+  keys = keys.filter(k=>k.id!==id);
+  // Delete from Firebase
+  if (window.firebaseReady && k) {
+    const fbId = k.fbId || k.id;
+    await deleteKeyFromFirebase(fbId);
+  }
+  saveKeysToStorage();
+  renderKeyStats(); renderKeyTable();
+  showToast('Key deleted.', 'info');
+}
+
+async function clearAllKeys() {
+  if (!confirm('Clear ALL keys? This cannot be undone.')) return;
+  keys = [];
+  // Clear from Firebase
+  if (window.firebaseReady) {
+    try {
+      await window.firebaseSet(window.firebaseRef(window.firebaseDB, 'keys'), {});
+    } catch(e) { console.log('Firebase clear error:', e); }
+  }
+  localStorage.removeItem('hina_keys');
+  renderKeyStats(); renderKeyTable();
+  showToast('All keys cleared from Firebase!', 'error');
+}
+
+// ===== IMAGE UPLOADER =====
+let selectedFile = null;
+
+function previewToolIcon() {
+  const url = document.getElementById('tiurl').value.trim();
+  const box = document.getElementById('iconPreviewBox');
+  const img = document.getElementById('iconPreview');
+  if (url) { img.src = url; box.style.display = 'block'; }
+  else { box.style.display = 'none'; }
+}
+
+function handleFileSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  selectedFile = file;
+  showUploadPreview(file);
+}
+
+function handleDrop(event) {
+  event.preventDefault();
+  document.getElementById('uploadDropZone').style.borderColor = 'var(--shadow-dark)';
+  const file = event.dataTransfer.files[0];
+  if (!file || !file.type.startsWith('image/')) { showToast('Sirf image files allowed hain!', 'error'); return; }
+  selectedFile = file;
+  showUploadPreview(file);
+}
+
+function showUploadPreview(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    document.getElementById('uploadPreview').src = e.target.result;
+    document.getElementById('uploadPreviewBox').style.display = 'block';
+    document.getElementById('uploadBtn').style.display = 'block';
+    document.getElementById('generatedLinkBox').style.display = 'none';
+    document.getElementById('uploadStatus').textContent = '📷 ' + file.name;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function uploadImageToImgBB() {
+  if (!selectedFile) { showToast('Pehle image select karo!', 'error'); return; }
+  const statusEl = document.getElementById('uploadStatus');
+  const btn = document.getElementById('uploadBtn');
+  btn.textContent = '⏳ Uploading...';
+  btn.disabled = true;
+  statusEl.textContent = '☁️ Cloudinary pe upload ho rahi hai...';
+
+  try {
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+    formData.append('upload_preset', 'ml_default');
+    formData.append('cloud_name', 'dws6tdcve');
+
+    const res = await fetch('https://api.cloudinary.com/v1_1/dws6tdcve/image/upload', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json();
+
+    if (data.secure_url) {
+      const link = data.secure_url;
+      document.getElementById('generatedLink').value = link;
+      document.getElementById('generatedLinkBox').style.display = 'block';
+      statusEl.textContent = '✅ Upload successful!';
+      showToast('Image upload ho gayi! Link ready hai ✅', 'success');
+    } else {
+      throw new Error(data.error?.message || 'Upload failed');
+    }
+  } catch(e) {
+    console.log('Upload error:', e);
+    statusEl.textContent = '❌ Upload fail: ' + e.message;
+    showToast('Upload fail ho gayi!', 'error');
+  }
+  btn.textContent = '☁️ Upload & Get Link';
+  btn.disabled = false;
+}
+
+function copyGeneratedLink() {
+  const link = document.getElementById('generatedLink').value;
+  navigator.clipboard.writeText(link).then(() => showToast('Link copy ho gaya! 📋', 'success'));
+}
+
+function useAsToolIcon() {
+  const link = document.getElementById('generatedLink').value;
+  document.getElementById('tiurl').value = link;
+  previewToolIcon();
+  showToast('Icon field mein paste ho gaya! 🛠️', 'success');
+}
+
+// ===== TOOL MANAGEMENT =====
+function toggleToolType() {}
+
+async function addTool() {
+  const name  = document.getElementById('tn').value.trim();
+  const url   = document.getElementById('turl').value.trim();
+  const icon  = document.getElementById('tiurl').value.trim() || '🛠️';
+  if (!name || !url) { showToast('Tool Name aur Link zaroori hain!', 'error'); return; }
+  const toolId = 'tool_' + Date.now();
+  const newTool = { id: toolId, name, url, icon, cat: 'Tools', desc: name, type: 'external', pinned: false };
+  tools.push(newTool);
+
+  // Wait for Firebase if not ready yet
+  if (!window.firebaseReady) {
+    await new Promise(r => setTimeout(r, 2000));
+  }
+
+  if (window.firebaseReady) {
+    try {
+      await window.firebaseSet(window.firebaseRef(window.firebaseDB, 'tools/' + toolId), newTool);
+      showToast('✅ Tool Firebase mein save ho gaya! Toolkit mein nazar ayega.', 'success');
+    } catch(e) {
+      console.error('Firebase tool save error:', e);
+      showToast('❌ Firebase Error: ' + e.message, 'error');
+    }
+  } else {
+    showToast('⚠️ Firebase connect nahi hua!', 'error');
+  }
+
+  renderToolAdmGrid();
+  document.getElementById('tn').value = '';
+  document.getElementById('turl').value = '';
+  document.getElementById('tiurl').value = '';
+  document.getElementById('iconPreviewBox').style.display = 'none';
+}
+
+function renderToolAdmGrid() {
+  const grid = document.getElementById('toolAdmGrid');
+  if (!tools.length) { grid.innerHTML='<p style="color:var(--text-sub)">No tools yet. Add one above.</p>'; return; }
+  grid.innerHTML = tools.map(t => {
+    const iconHtml = t.icon && t.icon.startsWith('http')
+      ? `<img src="${t.icon}" style="width:40px;height:40px;border-radius:10px;object-fit:cover;" onerror="this.outerHTML='🛠️'"/>`
+      : `<span style="font-size:22px;">${t.icon || '🛠️'}</span>`;
+    return `
+    <div class="tool-adm-card">
+      <div class="tac-header">
+        <div class="tac-icon">${iconHtml}</div>
+        <div>
+          <div class="tac-name">${t.name}</div>
+          <span style="font-size:11px;color:var(--text-sub);">🔗 ${(t.url||'').substring(0,30)}...</span>
+        </div>
+      </div>
+      <div class="tac-actions" style="flex-wrap:wrap;">
+        <button class="btn btn-primary" style="padding:7px 14px;font-size:12px;" onclick="openToolPreview('${t.id}')">👁️ Open</button>
+        <button class="btn btn-ghost" style="padding:7px 14px;font-size:12px;" onclick="openEditTool('${t.id}')">✏️ Edit</button>
+        <button class="btn btn-danger" style="padding:7px 14px;font-size:12px;" onclick="deleteTool('${t.id}')">🗑️ Delete</button>
+        <button class="btn btn-ghost" style="padding:7px 14px;font-size:12px;" onclick="togglePin('${t.id}')">${t.pinned?'📌 Unpin':'📍 Pin'}</button>
+      </div>
+    </div>
+  `}).join('');
+}
+
+async function deleteTool(id) {
+  if (!confirm('Delete this tool?')) return;
+  tools = tools.filter(t=>t.id!==id);
+  renderToolAdmGrid();
+  // ✅ Delete from Firebase
+  if (window.firebaseReady) {
+    try {
+      await window.firebaseRemove(window.firebaseRef(window.firebaseDB, 'tools/' + id));
+    } catch(e) { console.log('Firebase tool delete error:', e); }
+  }
+  showToast('Tool deleted.', 'info');
+}
+
+async function togglePin(id) {
+  const t = tools.find(t=>t.id===id);
+  if (t) {
+    t.pinned = !t.pinned;
+    renderToolAdmGrid();
+    showToast(t.pinned?'Tool pinned!':'Tool unpinned.','info');
+    if (window.firebaseReady) {
+      try { await window.firebaseUpdate(window.firebaseRef(window.firebaseDB, 'tools/' + id), { pinned: t.pinned }); } catch(e) {}
+    }
+  }
+}
+
+function openEditTool(id) {
+  const t = tools.find(t=>t.id===id);
+  if (!t) return;
+  editingToolId = id;
+  document.getElementById('eName').value = t.name;
+  document.getElementById('eCat').value = t.cat;
+  document.getElementById('eIcon').value = t.icon;
+  document.getElementById('eDesc').value = t.desc;
+  document.getElementById('eUrl').value = t.url||'';
+  document.getElementById('eLogic').value = t.logic||'';
+  document.getElementById('editModal').classList.add('active');
+}
+function closeEditModal() { document.getElementById('editModal').classList.remove('active'); editingToolId=null; }
+async function saveEditTool() {
+  const t = tools.find(t=>t.id===editingToolId);
+  if (!t) return;
+  t.name  = document.getElementById('eName').value;
+  t.cat   = document.getElementById('eCat').value;
+  t.icon  = document.getElementById('eIcon').value;
+  t.desc  = document.getElementById('eDesc').value;
+  t.url   = document.getElementById('eUrl').value;
+  t.logic = document.getElementById('eLogic').value;
+  closeEditModal();
+  renderToolAdmGrid();
+  // ✅ Update in Firebase
+  if (window.firebaseReady) {
+    try { await window.firebaseUpdate(window.firebaseRef(window.firebaseDB, 'tools/' + t.id), t); } catch(e) {}
+  }
+  showToast('Tool updated! ✅', 'success');
+}
+
+// ===== SETTINGS =====
+function saveBranding() {
+  const name = document.getElementById('setName').value;
+  const sub  = document.getElementById('setSubtitle').value;
+  showToast(`Branding saved: "${name}"`, 'success');
+}
+
+// ===== LOGIN PAGE SETTINGS =====
+function saveLoginPageSettings() {
+  const settings = {
+    title:    document.getElementById('lp_title').value,
+    welcome:  document.getElementById('lp_welcome').value,
+    line1:    document.getElementById('lp_line1').value,
+    line2:    document.getElementById('lp_line2').value,
+    line3:    document.getElementById('lp_line3').value,
+    passph:   document.getElementById('lp_passph').value,
+    loginbtn: document.getElementById('lp_loginbtn').value,
+    wabtn:    document.getElementById('lp_wabtn').value,
+    wanum:    document.getElementById('lp_wanum').value.replace(/\D/g,''),
+    errmsg:   document.getElementById('lp_errmsg').value,
+  };
+  localStorage.setItem('hina_login_settings', JSON.stringify(settings));
+  if (window.firebaseReady) {
+    try { window.firebaseSet(window.firebaseRef(window.firebaseDB, 'login_settings'), settings); } catch(e) {}
+  }
+  const st = document.getElementById('lp_status');
+  st.style.display = 'block';
+  setTimeout(() => st.style.display = 'none', 3000);
+  showToast('Login Page settings saved! ✅', 'success');
+}
+
+function updateWAPreview() {
+  const num = document.getElementById('lp_wanum').value.replace(/\D/g,'');
+  const link = 'https://wa.me/' + (num || '923001234567');
+  const el = document.getElementById('wa_preview_link');
+  if (el) { el.href = link; el.textContent = link; }
+}
+
+// ===== TOOL PREVIEW (with Back button) =====
+function openToolPreview(id) {
+  const t = tools.find(t => t.id == id);
+  if (!t) return;
+  document.getElementById('tpModalTitle').textContent = t.icon + ' ' + t.name;
+  const iconHtml = t.icon && t.icon.startsWith('http')
+    ? `<img src="${t.icon}" style="width:60px;height:60px;border-radius:14px;object-fit:cover;box-shadow:var(--neu-out);"/>`
+    : `<span style="font-size:48px;">${t.icon || '🛠️'}</span>`;
+  let content = `
+    <div style="text-align:center;margin-bottom:18px;">
+      ${iconHtml}
+      <div style="font-size:20px;font-weight:700;margin-top:12px;">${t.name}</div>
+      <div style="font-size:13px;color:var(--text-sub);margin-top:4px;">${t.desc || ''}</div>
+      <div style="margin-top:8px;"><span class="badge badge-active">${t.cat || 'Tool'}</span></div>
+    </div>`;
+  if (t.url) {
+    content += `<div style="margin-bottom:14px;">
+      <label style="font-size:12px;font-weight:700;color:var(--text-sub);">🔗 TOOL LINK</label>
+      <div style="display:flex;gap:8px;margin-top:6px;">
+        <input class="form-input" value="${t.url}" readonly style="font-size:12px;"/>
+        <button class="btn btn-primary" onclick="window.open('${t.url}','_blank')" style="padding:10px 14px;white-space:nowrap;">🚀 Open</button>
+      </div>
+    </div>`;
+  }
+  document.getElementById('tpContent').innerHTML = content;
+  document.getElementById('toolPreviewModal').classList.add('active');
+}
+function closeToolPreview() {
+  document.getElementById('toolPreviewModal').classList.remove('active');
+}
+
+function updateColorPreview(variable, value) {
+  document.documentElement.style.setProperty(variable, value);
+  const idMap = {'--primary':'cPrimaryHex','--secondary':'cSecondaryHex','--accent':'cAccentHex','--bg':'cBgHex'};
+  if (idMap[variable]) document.getElementById(idMap[variable]).value = value;
+}
+function syncColor(inputId, value) {
+  if (/^#[0-9A-Fa-f]{6}$/.test(value)) document.getElementById(inputId).value = value;
+}
+function saveColors() { showToast('Colors saved!', 'success'); }
+function resetColors() {
+  const defaults = { '--primary':'#6c63ff','--secondary':'#ff6584','--accent':'#43e97b','--bg':'#e8edf2' };
+  Object.entries(defaults).forEach(([k,v]) => {
+    document.documentElement.style.setProperty(k,v);
+    updateColorPreview(k,v);
+  });
+  document.getElementById('cPrimary').value='#6c63ff';
+  document.getElementById('cSecondary').value='#ff6584';
+  document.getElementById('cAccent').value='#43e97b';
+  document.getElementById('cBg').value='#e8edf2';
+  showToast('Colors reset to default.', 'info');
+}
+
+function updateNotifPreview() {
+  document.getElementById('pIcon').textContent  = document.getElementById('nIcon').value||'📢';
+  document.getElementById('pTitle').textContent = document.getElementById('nTitle').value||'Notification Title';
+  document.getElementById('pMsg').textContent   = document.getElementById('nMsg').value||'Your message here';
+}
+function sendNotification() {
+  const t = document.getElementById('nTitle').value.trim();
+  const m = document.getElementById('nMsg').value.trim();
+  if (!t||!m) { showToast('Please fill in title and message.','error'); return; }
+  showToast('Notification sent to all users!','success');
+}
+function clearNotification() {
+  document.getElementById('nTitle').value=''; document.getElementById('nMsg').value='';
+  updateNotifPreview(); showToast('Notification cleared.','info');
+}
+
+// ===== UTILS =====
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(()=>showToast('Copied!','success'));
+}
+function showToast(msg, type='info') {
+  const icons = { success:'✅', error:'❌', info:'ℹ️' };
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(()=>el.remove(), 3500);
+}
+
+// Enter on login
+document.getElementById('alPass').addEventListener('keydown', e => { if(e.key==='Enter') adminLogin(); });
+</script>
+</body>
+</html>
