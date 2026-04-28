@@ -1,8 +1,14 @@
 {
-  "name": "hina-toolkit",
+  "name": "hina-toolkit-api",
   "version": "1.0.0",
-  "description": "HINA Toolkit - Vercel Full Project",
-  "engines": {
-    "node": "24.x"
+  "description": "Secure API Backend for Hina Toolkit",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "firebase": "^10.12.0"
   }
 }
