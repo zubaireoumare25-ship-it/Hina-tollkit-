@@ -6,7 +6,6 @@
 <title>HINA ADMIN PANEL</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Orbitron:wght@700&display=swap" rel="stylesheet"/>
 <style>
-  /* آپ کا مکمل 100% اوریجنل CSS یہاں رہے گا۔ */
   :root { --bg: #e8edf2; --surface: #e8edf2; --primary: #6c63ff; --secondary: #ff6584; --accent: #43e97b; --warn: #f6ad55; --text: #2d3748; --text-sub: #718096; --shadow-light: #ffffff; --shadow-dark: #c5cdd9; --neu-out: 6px 6px 14px var(--shadow-dark), -6px -6px 14px var(--shadow-light); --neu-in: inset 4px 4px 10px var(--shadow-dark), inset -4px -4px 10px var(--shadow-light); --neu-hover: 8px 8px 20px var(--shadow-dark), -8px -8px 20px var(--shadow-light); --radius: 16px; --transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); font-family: 'Poppins', sans-serif; color: var(--text); min-height: 100vh; }
@@ -113,9 +112,9 @@
 
   <div class="adm-content">
 
+    <!-- KEYS SECTION -->
     <div class="section active" id="sec-keys">
       <div class="stats-row" id="keyStats"></div>
-
       <div class="panel">
         <div class="panel-title">➕ Generate New Keys</div>
         <div class="form-row">
@@ -140,7 +139,7 @@
           </div>
           <div class="form-group">
             <label>NOTE (optional)</label>
-            <input class="form-input" id="genNote" id="genNote" placeholder="Custom password (e.g. HINA786, Legend@123)"/>
+            <input class="form-input" id="genNote" placeholder="Custom password (e.g. HINA786, Legend@123)"/>
           </div>
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;">
@@ -170,6 +169,7 @@
       </div>
     </div>
 
+    <!-- TOOLS SECTION -->
     <div class="section" id="sec-tools">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
         <div class="panel">
@@ -229,6 +229,7 @@
       </div>
     </div>
 
+    <!-- LOGIN EDIT SECTION -->
     <div class="section" id="sec-loginedit">
       <div class="panel">
         <div class="panel-title">✏️ Login Page Editor</div>
@@ -281,7 +282,16 @@
       </div>
     </div>
 
+    <!-- SETTINGS SECTION -->
     <div class="section" id="sec-settings">
+
+      <!-- NEW: MAINTENANCE MODE PANEL -->
+      <div class="panel">
+        <div class="panel-title">🚧 Maintenance Mode</div>
+        <p style="font-size:13px; color:var(--text-sub); margin-bottom:12px;">Toggle this to close the website for regular users and show a VIP maintenance message.</p>
+        <button id="maintenanceBtn" class="btn btn-danger" onclick="toggleMaintenance()">🔴 Turn ON Maintenance</button>
+      </div>
+
       <div class="panel">
         <div class="panel-title">🎨 Branding</div>
         <div class="form-row">
@@ -321,6 +331,7 @@
   </div>
 </div>
 
+<!-- Modals remain the same -->
 <div class="modal-overlay" id="toolPreviewModal">
   <div class="modal-box" style="max-width:600px;">
     <div class="modal-hdr">
@@ -352,14 +363,14 @@
 </div>
 
 <script>
-const API_URL = "https://hina-tollkit-ht.vercel.app/"; 
+const API_URL = "https://hina-tollkit-ht.vercel.app"; // Apni backend API ka link check karlena zaroor
 
 let keys = [];
 let tools = [];
 let keyFilter = "all";
 let editingToolId = null;
+let isMaintenanceOn = false;
 
-// Initial Fetch from API
 async function fetchAdminData() {
     try {
         const res = await fetch(`${API_URL}/api/admin/get-data`);
@@ -371,10 +382,14 @@ async function fetchAdminData() {
             renderKeyTable(); 
             renderToolAdmGrid();
         }
+        // Fetch Maintenance Status
+        const setRes = await fetch(`${API_URL}/api/settings`);
+        const setData = await setRes.json();
+        isMaintenanceOn = setData.maintenanceMode || false;
+        updateMaintenanceBtn();
     } catch(e) { console.error("Error fetching data", e); }
 }
 
-// 🟢 NEW SECURE ADMIN LOGIN LOGIC 🟢
 async function adminLogin() {
   const u = document.getElementById('alUser').value.trim();
   const p = document.getElementById('alPass').value;
@@ -388,7 +403,6 @@ async function adminLogin() {
   }
 
   try {
-
       const response = await fetch(`${API_URL}/api/admin/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -398,16 +412,14 @@ async function adminLogin() {
       const data = await response.json();
 
       if (data.success) {
-
           document.getElementById('aLogin').style.display = 'none';
           document.getElementById('aDash').style.display = 'block';
           
           fetchAdminData();
-          setInterval(fetchAdminData, 10000); // Polling for live sync
+          setInterval(fetchAdminData, 10000); 
           
           showToast('Welcome, Admin! Dashboard loaded ✅', 'success');
       } else {
-
           err.textContent = '❌ ' + data.message;
           err.style.display = 'block';
           document.querySelector('.admin-login-card').style.animation = '';
@@ -418,6 +430,34 @@ async function adminLogin() {
       err.style.display = 'block';
   }
 }
+
+// ===== MAINTENANCE TOGGLE LOGIC =====
+function updateMaintenanceBtn() {
+    const btn = document.getElementById('maintenanceBtn');
+    if(isMaintenanceOn) {
+        btn.textContent = "🟢 Turn OFF Maintenance";
+        btn.className = "btn btn-primary";
+    } else {
+        btn.textContent = "🔴 Turn ON Maintenance";
+        btn.className = "btn btn-danger";
+    }
+}
+
+async function toggleMaintenance() {
+    isMaintenanceOn = !isMaintenanceOn;
+    updateMaintenanceBtn();
+    try {
+        await fetch(`${API_URL}/api/admin/toggle-maintenance`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ status: isMaintenanceOn })
+        });
+        showToast(isMaintenanceOn ? '🚧 Maintenance Mode ON' : '✅ Maintenance Mode OFF', 'info');
+    } catch(e){
+        showToast('Error updating maintenance mode', 'error');
+    }
+}
+// ====================================
 
 function adminLogout() {
   document.getElementById('aDash').style.display = 'none';
@@ -433,7 +473,7 @@ function switchTab(tab, btn) {
   btn.classList.add('active');
 }
 
-// ===== API REQUESTS FOR KEYS =====
+// [ALL YOUR OTHER EXISTING API AND ADMIN FUNCTIONS REMAIN EXACTLY THE SAME DOWN HERE...]
 async function saveKeysToAPI() {
     try { await fetch(`${API_URL}/api/admin/save-keys`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ keys }) }); } 
     catch(e) { console.log(e); }
@@ -501,7 +541,6 @@ function getPlanDays(plan) {
   if (plan === '1-day') return 1; if (plan === '3-day') return 3; if (plan === '7-day') return 7; if (plan === '15-day') return 15; if (plan === '30-day') return 30; return 0; 
 }
 
-// ===== API REQUESTS FOR TOOLS =====
 async function addTool() {
   const name  = document.getElementById('tn').value.trim(); const url   = document.getElementById('turl').value.trim(); const icon  = document.getElementById('tiurl').value.trim() || '🛠️';
   if (!name || !url) { showToast('Tool Name aur Link zaroori hain!', 'error'); return; }
@@ -547,7 +586,6 @@ function renderToolAdmGrid() {
     return `<div class="tool-adm-card"><div class="tac-header"><div class="tac-icon">${iconHtml}</div><div><div class="tac-name">${t.name}</div><span style="font-size:11px;color:var(--text-sub);">🔗 ${(t.url||'').substring(0,30)}...</span></div></div><div class="tac-actions" style="flex-wrap:wrap;"><button class="btn btn-primary" style="padding:7px 14px;font-size:12px;" onclick="openToolPreview('${t.id}')">👁️ Open</button><button class="btn btn-ghost" style="padding:7px 14px;font-size:12px;" onclick="openEditTool('${t.id}')">✏️ Edit</button><button class="btn btn-danger" style="padding:7px 14px;font-size:12px;" onclick="deleteTool('${t.id}')">🗑️ Delete</button><button class="btn btn-ghost" style="padding:7px 14px;font-size:12px;" onclick="togglePin('${t.id}')">${t.pinned?'📌 Unpin':'📍 Pin'}</button></div></div>`}).join('');
 }
 
-// ===== CLOUDINARY IMAGE UPLOAD (Unchanged) =====
 let selectedFile = null;
 function previewToolIcon() { const url = document.getElementById('tiurl').value.trim(); const box = document.getElementById('iconPreviewBox'); const img = document.getElementById('iconPreview'); if (url) { img.src = url; box.style.display = 'block'; } else { box.style.display = 'none'; } }
 function handleFileSelect(event) { const file = event.target.files[0]; if (!file) return; selectedFile = file; showUploadPreview(file); }
@@ -568,7 +606,6 @@ async function uploadImageToImgBB() {
 function copyGeneratedLink() { navigator.clipboard.writeText(document.getElementById('generatedLink').value).then(() => showToast('Link copy ho gaya! 📋', 'success')); }
 function useAsToolIcon() { document.getElementById('tiurl').value = document.getElementById('generatedLink').value; previewToolIcon(); showToast('Icon field mein paste ho gaya! 🛠️', 'success'); }
 
-// ===== REST OF ADMIN FUNCTIONS =====
 function openEditTool(id) { const t = tools.find(t=>t.id===id); if (!t) return; editingToolId = id; document.getElementById('eName').value = t.name; document.getElementById('eCat').value = t.cat; document.getElementById('eIcon').value = t.icon; document.getElementById('eDesc').value = t.desc; document.getElementById('eUrl').value = t.url||''; document.getElementById('eLogic').value = t.logic||''; document.getElementById('editModal').classList.add('active'); }
 function closeEditModal() { document.getElementById('editModal').classList.remove('active'); editingToolId=null; }
 function saveBranding() { showToast(`Branding saved!`, 'success'); }
