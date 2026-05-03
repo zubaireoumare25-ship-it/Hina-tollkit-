@@ -25,6 +25,31 @@ const firebaseApp = initializeApp(firebaseConfig);
 const db = getDatabase(firebaseApp);
 
 // ==========================================
+// 🟢 SYSTEM SETTINGS API ROUTES
+// ==========================================
+
+// Get Maintenance Status for Users
+app.get('/api/settings', async (req, res) => {
+    try {
+        const snap = await get(ref(db, 'settings/maintenanceMode'));
+        res.json({ maintenanceMode: snap.exists() ? snap.val() : false });
+    } catch (error) {
+        res.json({ maintenanceMode: false });
+    }
+});
+
+// Admin Toggle Maintenance
+app.post('/api/admin/toggle-maintenance', async (req, res) => {
+    const { status } = req.body;
+    try {
+        await set(ref(db, 'settings/maintenanceMode'), status);
+        res.json({ success: true, status });
+    } catch (error) {
+        res.json({ success: false, message: error.message });
+    }
+});
+
+// ==========================================
 // 🟢 USER PANEL API ROUTES
 // ==========================================
 
