@@ -109,6 +109,7 @@
     <button class="adm-tab" onclick="switchTab('tools', this)">🛠️ Tool Management</button>
     <button class="adm-tab" onclick="switchTab('settings', this)">⚙️ Settings</button>
     <button class="adm-tab" onclick="switchTab('loginedit', this)">✏️ Login Page Edit</button>
+    <button class="adm-tab" onclick="switchTab('maintenance', this)" id="maintTab">🔧 Maintenance Mode</button>
   </div>
 
   <div class="adm-content">
@@ -318,10 +319,45 @@
       </div>
     </div>
 
+    <div class="section" id="sec-maintenance">
+      <div class="panel" style="text-align:center;padding:40px 26px;">
+        <div style="font-size:60px;margin-bottom:16px;">🔧</div>
+        <div class="panel-title" style="justify-content:center;font-size:22px;margin-bottom:8px;">Maintenance Mode</div>
+        <p style="color:var(--text-sub);font-size:14px;margin-bottom:30px;">Jab ON karoge, puri website band ho jayegi aur users ko maintenance screen dikhegi.</p>
+
+        <div id="maintStatusBadge" style="display:inline-flex;align-items:center;gap:10px;padding:12px 28px;border-radius:999px;font-size:16px;font-weight:700;margin-bottom:32px;background:rgba(67,233,123,0.15);color:#27a548;box-shadow:var(--neu-out);">
+          <span id="maintStatusDot" style="width:12px;height:12px;border-radius:50%;background:#27a548;display:inline-block;"></span>
+          <span id="maintStatusText">Website LIVE hai ✅</span>
+        </div>
+
+        <div style="display:flex;justify-content:center;margin-bottom:32px;">
+          <div style="background:var(--surface);box-shadow:var(--neu-out);border-radius:999px;padding:6px;display:inline-flex;gap:6px;">
+            <button id="maintOffBtn" onclick="setMaintenance(false)" class="btn" style="border-radius:999px;padding:12px 32px;font-size:14px;background:linear-gradient(135deg,#43e97b,#27a548);color:#fff;box-shadow:3px 3px 8px rgba(67,233,123,0.4);">✅ Website ON</button>
+            <button id="maintOnBtn" onclick="setMaintenance(true)" class="btn" style="border-radius:999px;padding:12px 32px;font-size:14px;background:var(--surface);box-shadow:none;color:var(--text-sub);">🔧 Maintenance ON</button>
+          </div>
+        </div>
+
+        <div class="panel" style="max-width:500px;margin:0 auto;text-align:left;">
+          <div class="panel-title">✏️ Maintenance Message Customize karo</div>
+          <div class="form-group" style="margin-bottom:14px;">
+            <label>TITLE</label>
+            <input class="form-input" id="maintTitle" value="🔧 Website Maintenance Mode" placeholder="Maintenance Title"/>
+          </div>
+          <div class="form-group" style="margin-bottom:14px;">
+            <label>MESSAGE</label>
+            <textarea class="form-textarea" id="maintMsg" placeholder="Maintenance message...">Hum abhi website ko update kar rahe hain. Thodi der mein wapas aao! ❤️</textarea>
+          </div>
+          <div class="form-group" style="margin-bottom:18px;">
+            <label>EMOJI / ICON</label>
+            <input class="form-input" id="maintEmoji" value="🔧" maxlength="4" placeholder="Emoji"/>
+          </div>
+          <button class="btn btn-primary" onclick="saveMaintSettings()" style="width:100%;">💾 Save Message</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
-
-<div class="modal-overlay" id="toolPreviewModal">
   <div class="modal-box" style="max-width:600px;">
     <div class="modal-hdr">
       <button class="btn btn-ghost" style="padding:7px 16px;font-size:13px;display:flex;align-items:center;gap:6px;" onclick="closeToolPreview()">⬅️ Back</button>
@@ -352,7 +388,7 @@
 </div>
 
 <script>
-const API_URL = ""; 
+const API_URL = "https://hina-tollkit-ht.vercel.app/"; 
 
 let keys = [];
 let tools = [];
@@ -403,6 +439,7 @@ async function adminLogin() {
           document.getElementById('aDash').style.display = 'block';
           
           fetchAdminData();
+          loadMaintStatus();
           setInterval(fetchAdminData, 10000); // Polling for live sync
           
           showToast('Welcome, Admin! Dashboard loaded ✅', 'success');
@@ -572,6 +609,61 @@ function useAsToolIcon() { document.getElementById('tiurl').value = document.get
 function openEditTool(id) { const t = tools.find(t=>t.id===id); if (!t) return; editingToolId = id; document.getElementById('eName').value = t.name; document.getElementById('eCat').value = t.cat; document.getElementById('eIcon').value = t.icon; document.getElementById('eDesc').value = t.desc; document.getElementById('eUrl').value = t.url||''; document.getElementById('eLogic').value = t.logic||''; document.getElementById('editModal').classList.add('active'); }
 function closeEditModal() { document.getElementById('editModal').classList.remove('active'); editingToolId=null; }
 function saveBranding() { showToast(`Branding saved!`, 'success'); }
+
+// ===== MAINTENANCE MODE =====
+function loadMaintStatus() {
+  const isOn = localStorage.getItem('hina_maintenance') === 'true';
+  updateMaintUI(isOn);
+  const title = localStorage.getItem('hina_maint_title');
+  const msg = localStorage.getItem('hina_maint_msg');
+  const emoji = localStorage.getItem('hina_maint_emoji');
+  if (title) document.getElementById('maintTitle').value = title;
+  if (msg) document.getElementById('maintMsg').value = msg;
+  if (emoji) document.getElementById('maintEmoji').value = emoji;
+}
+
+function updateMaintUI(isOn) {
+  const badge = document.getElementById('maintStatusBadge');
+  const dot = document.getElementById('maintStatusDot');
+  const text = document.getElementById('maintStatusText');
+  const onBtn = document.getElementById('maintOnBtn');
+  const offBtn = document.getElementById('maintOffBtn');
+  if (isOn) {
+    badge.style.background = 'rgba(255,101,132,0.15)'; badge.style.color = 'var(--secondary)';
+    dot.style.background = '#ff6584';
+    text.textContent = '⚠️ Maintenance Mode ON — Website BAND hai!';
+    onBtn.style.background = 'linear-gradient(135deg,var(--secondary),#e53e3e)'; onBtn.style.color='#fff'; onBtn.style.boxShadow='3px 3px 8px rgba(255,101,132,0.4)';
+    offBtn.style.background = 'var(--surface)'; offBtn.style.color='var(--text-sub)'; offBtn.style.boxShadow='none';
+  } else {
+    badge.style.background = 'rgba(67,233,123,0.15)'; badge.style.color = '#27a548';
+    dot.style.background = '#43e97b';
+    text.textContent = 'Website LIVE hai ✅';
+    offBtn.style.background = 'linear-gradient(135deg,#43e97b,#27a548)'; offBtn.style.color='#fff'; offBtn.style.boxShadow='3px 3px 8px rgba(67,233,123,0.4)';
+    onBtn.style.background = 'var(--surface)'; onBtn.style.color='var(--text-sub)'; onBtn.style.boxShadow='none';
+  }
+}
+
+async function setMaintenance(isOn) {
+  localStorage.setItem('hina_maintenance', isOn ? 'true' : 'false');
+  updateMaintUI(isOn);
+  try {
+    await fetch(`${API_URL}/api/admin/set-maintenance`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ maintenance: isOn, title: document.getElementById('maintTitle').value, msg: document.getElementById('maintMsg').value, emoji: document.getElementById('maintEmoji').value })
+    });
+  } catch(e) { /* API optional */ }
+  showToast(isOn ? '🔧 Maintenance Mode ON! Website band ho gayi.' : '✅ Website wapas LIVE ho gayi!', isOn ? 'error' : 'success');
+}
+
+function saveMaintSettings() {
+  localStorage.setItem('hina_maint_title', document.getElementById('maintTitle').value);
+  localStorage.setItem('hina_maint_msg', document.getElementById('maintMsg').value);
+  localStorage.setItem('hina_maint_emoji', document.getElementById('maintEmoji').value);
+  showToast('Maintenance message save ho gaya! ✅', 'success');
+}
+// Load on dashboard open — call after login
+const _origFetchAdminData = fetchAdminData;
+
 function saveLoginPageSettings() { showToast('Login Page settings saved! ✅', 'success'); }
 function updateWAPreview() { const num = document.getElementById('lp_wanum').value.replace(/\D/g,''); const link = 'https://wa.me/' + (num || '923001234567'); const el = document.getElementById('wa_preview_link'); if (el) { el.href = link; el.textContent = link; } }
 function openToolPreview(id) { const t = tools.find(t => t.id == id); if (!t) return; document.getElementById('tpModalTitle').textContent = t.icon + ' ' + t.name; document.getElementById('toolPreviewModal').classList.add('active'); }
