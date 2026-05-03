@@ -74,48 +74,11 @@
   .ext-loader { display: flex; align-items: center; justify-content: center; position: absolute; inset: 60px 0 0; font-size: 40px; animation: pulseDark 1.5s infinite; }
   #extFrame { flex: 1; border: none; width: 100%; }
   @media (max-width: 600px) { .tk-header { padding: 12px 16px; flex-wrap: wrap; } .tk-main { padding: 16px; } .key-login-card { padding: 32px 22px; } .modal-box { padding: 22px 18px; } }
-
-  /* MAINTENANCE SCREEN */
-  #maintenanceScreen { display:none; position:fixed; inset:0; z-index:9000; background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460); align-items:center; justify-content:center; flex-direction:column; text-align:center; padding:30px; }
-  #maintenanceScreen.active { display:flex; animation:slideUp 0.5s ease; }
-  .maint-icon { font-size:80px; margin-bottom:20px; animation:pulseDark 2s infinite; }
-  .maint-title { font-family:'Orbitron',monospace; font-size:26px; color:#fff; margin-bottom:14px; letter-spacing:2px; }
-  .maint-msg { font-size:16px; color:rgba(255,255,255,0.75); max-width:420px; line-height:1.7; margin-bottom:30px; }
-  .maint-spinner { width:48px; height:48px; border:4px solid rgba(255,255,255,0.15); border-top-color:#6c63ff; border-radius:50%; animation:spin 1s linear infinite; margin:0 auto; }
-  @keyframes spin { to { transform:rotate(360deg); } }
-
-  /* VPN DETECTED BANNER */
-  #vpnBanner { display:none; position:fixed; top:0; left:0; right:0; z-index:8999; background:linear-gradient(135deg,#ff6584,#e53e3e); color:#fff; padding:14px 20px; align-items:center; gap:12px; box-shadow:0 4px 20px rgba(255,101,132,0.5); animation:slideIn 0.4s ease; }
-  #vpnBanner.active { display:flex; }
-  .vpn-icon { font-size:24px; }
-  .vpn-text { flex:1; }
-  .vpn-text strong { font-size:15px; font-weight:700; display:block; }
-  .vpn-text span { font-size:12px; opacity:0.9; }
-  .vpn-close { background:rgba(255,255,255,0.2); border:none; color:#fff; border-radius:8px; padding:6px 14px; cursor:pointer; font-size:15px; font-family:'Poppins',sans-serif; font-weight:600; }
 </style>
 </head>
 <body>
 
 <div id="toast-container"></div>
-
-<!-- MAINTENANCE SCREEN -->
-<div id="maintenanceScreen">
-  <div class="maint-icon" id="maintEmoji">🔧</div>
-  <div class="maint-title" id="maintTitleEl">Website Maintenance Mode</div>
-  <div class="maint-msg" id="maintMsgEl">Hum abhi website ko update kar rahe hain. Thodi der mein wapas aao! ❤️</div>
-  <div class="maint-spinner"></div>
-  <div style="margin-top:24px;font-size:13px;color:rgba(255,255,255,0.4);">HINA TOOLKIT — Please wait...</div>
-</div>
-
-<!-- VPN DETECTED BANNER -->
-<div id="vpnBanner">
-  <span class="vpn-icon">🚫</span>
-  <div class="vpn-text">
-    <strong>⚠️ VPN Detected!</strong>
-    <span>Aap VPN use kar rahe ho. Behtar experience ke liye VPN band karo.</span>
-  </div>
-  <button class="vpn-close" onclick="document.getElementById('vpnBanner').classList.remove('active')">✕ Dismiss</button>
-</div>
 
 <div id="notifBanner">
   <span class="notif-icon" id="notifIcon">📢</span>
@@ -518,94 +481,6 @@ function contactAdmin() { const n = ['+','9','2','3','2','6','2','6','4','1','3'
 
 // Enter key on login
 document.getElementById('keyInput').addEventListener('keydown', e => { if(e.key==='Enter') validateKey(); });
-
-// ===== MAINTENANCE MODE CHECK =====
-async function checkMaintenance() {
-  // Check from API first, fallback to localStorage (set by admin panel)
-  let isOn = false;
-  let title = '🔧 Website Maintenance Mode';
-  let msg = 'Hum abhi website ko update kar rahe hain. Thodi der mein wapas aao! ❤️';
-  let emoji = '🔧';
-  try {
-    const res = await fetch('https://hina-tollkit-ht.vercel.app/api/maintenance-status');
-    const data = await res.json();
-    if (data && typeof data.maintenance !== 'undefined') {
-      isOn = data.maintenance;
-      if (data.title) title = data.title;
-      if (data.msg) msg = data.msg;
-      if (data.emoji) emoji = data.emoji;
-    }
-  } catch(e) {
-    // Fallback: check localStorage (admin panel se set hota hai same browser mein)
-    isOn = localStorage.getItem('hina_maintenance') === 'true';
-    const lt = localStorage.getItem('hina_maint_title');
-    const lm = localStorage.getItem('hina_maint_msg');
-    const le = localStorage.getItem('hina_maint_emoji');
-    if (lt) title = lt; if (lm) msg = lm; if (le) emoji = le;
-  }
-  if (isOn) {
-    document.getElementById('maintEmoji').textContent = emoji;
-    document.getElementById('maintTitleEl').textContent = title.replace(/^[^\w\s]*/, '').trim() || title;
-    document.getElementById('maintTitleEl').insertAdjacentText('afterbegin', emoji + ' ');
-    document.getElementById('maintMsgEl').textContent = msg;
-    document.getElementById('maintenanceScreen').classList.add('active');
-    // Hide everything else
-    document.getElementById('keyLoginScreen').style.display = 'none';
-    document.getElementById('toolkitApp').style.display = 'none';
-  }
-}
-
-// ===== VPN DETECTION =====
-async function detectVPN() {
-  let vpnDetected = false;
-  try {
-    // Method 1: ipapi.co check for proxy/hosting/vpn
-    const res = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(5000) });
-    const data = await res.json();
-    // Common VPN/proxy indicators
-    if (data.org) {
-      const suspiciousOrgs = ['vpn','proxy','hosting','cloud','server','datacenter','digitalocean','linode','vultr','ovh','amazon','google cloud','microsoft azure','hetzner','cloudflare','mullvad','nordvpn','expressvpn','surfshark','cyberghost','private internet','proton','tor','anonymizer','hide.me','tunnelbear'];
-      const orgLower = data.org.toLowerCase();
-      vpnDetected = suspiciousOrgs.some(s => orgLower.includes(s));
-    }
-    // Method 2: timezone mismatch
-    if (!vpnDetected && data.timezone) {
-      const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      if (browserTz && data.timezone && browserTz !== data.timezone) {
-        vpnDetected = true;
-      }
-    }
-  } catch(e) {
-    // If fetch fails, try WebRTC leak check
-    try {
-      await new Promise((resolve) => {
-        const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
-        pc.createDataChannel('');
-        pc.createOffer().then(o => pc.setLocalDescription(o));
-        pc.onicecandidate = (ice) => {
-          if (!ice || !ice.candidate || !ice.candidate.candidate) { resolve(); return; }
-          // If we got a local IP that looks like a VPN range, flag it
-          const ip = ice.candidate.candidate.match(/(\d+\.\d+\.\d+\.\d+)/);
-          if (ip && (ip[1].startsWith('10.') || ip[1].startsWith('172.') )) {
-            vpnDetected = true;
-          }
-          pc.close(); resolve();
-        };
-        setTimeout(resolve, 3000);
-      });
-    } catch(e2) {}
-  }
-
-  if (vpnDetected) {
-    document.getElementById('vpnBanner').classList.add('active');
-  }
-}
-
-// Run on page load
-window.addEventListener('DOMContentLoaded', () => {
-  checkMaintenance();
-  detectVPN();
-});
 </script>
 </body>
 </html>
